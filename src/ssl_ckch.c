@@ -750,8 +750,14 @@ struct cert_key_and_chain *ssl_sock_copy_cert_key_and_chain(struct cert_key_and_
 	}
 
 	if (src->dh) {
+#ifndef USE_WOLFSSL
 		HASSL_DH_up_ref(src->dh);
 		dst->dh = src->dh;
+#else
+       dst->dh = wolfSSL_DH_dup(src->dh);
+       if (!dst->dh)
+           goto error;
+#endif
 	}
 
 	if (src->sctl) {
@@ -3626,9 +3632,11 @@ static int show_crl_detail(X509_CRL *crl, struct buffer *out)
 	long version;
 	X509_NAME *issuer;
 	int write = -1;
+#ifndef USE_WOLFSSL
 	STACK_OF(X509_REVOKED) *rev = NULL;
 	X509_REVOKED *rev_entry = NULL;
 	int i;
+#endif
 
 	if (!tmp)
 		return -1;
@@ -3675,7 +3683,7 @@ static int show_crl_detail(X509_CRL *crl, struct buffer *out)
 	tmp->area[write] = '\0';
 	chunk_appendf(out, "%s\n", tmp->area);
 
-
+#ifndef USE_WOLFSSL
 	/* Revoked Certificates */
 	rev = X509_CRL_get_REVOKED(crl);
 	if (sk_X509_REVOKED_num(rev) > 0)
@@ -3700,6 +3708,7 @@ static int show_crl_detail(X509_CRL *crl, struct buffer *out)
 		tmp->area[write] = '\0';
 		chunk_appendf(out, "%s", tmp->area);
 	}
+#endif /* not USE_WOLFSSL */
 
 end:
 	free_trash_chunk(tmp);

@@ -1430,7 +1430,7 @@ int ssl_sock_ocsp_stapling_cbk(SSL *ssl, void *arg)
 		return SSL_TLSEXT_ERR_NOACK;
 
 	memcpy(ssl_buf, ocsp->response.area, ocsp->response.data);
-	SSL_set_tlsext_status_ocsp_resp(ssl, ssl_buf, ocsp->response.data);
+	SSL_set_tlsext_status_ocsp_resp(ssl, (unsigned char*)ssl_buf, ocsp->response.data);
 
 	return SSL_TLSEXT_ERR_OK;
 }
@@ -1480,7 +1480,11 @@ static int ssl_sock_load_ocsp(SSL_CTX *ctx, const struct cert_key_and_chain *ckc
 	struct certificate_ocsp *ocsp = NULL, *iocsp;
 	char *warn = NULL;
 	unsigned char *p;
+#ifndef USE_WOLFSSL
 	void (*callback) (void);
+#else
+	tlsextStatusCb callback;
+#endif
 
 
 	x = ckch->cert;
